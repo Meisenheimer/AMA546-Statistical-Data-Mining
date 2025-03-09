@@ -24,7 +24,9 @@ def get(url: str):
 
 
 if __name__ == "__main__":
-    for postfix in ["logvol.+12.txt", "logvol.-12.txt", "mda.tgz", "meta.txt", "tok.tgz", "full.tgz"]:
+    os.makedirs("./Origin/", exist_ok=True)
+    # for postfix in ["logvol.+12.txt", "logvol.-12.txt", "mda.tgz", "meta.txt", "tok.tgz", "full.tgz"]:
+    for postfix in ["logvol.+12.txt", "logvol.-12.txt", "tok.tgz"]:
         for year in range(1996, 2007):
             url_list.append("https://www.cs.cmu.edu/~ark/10K/data/%d.%s" % (year, postfix))
     pool = mul.Pool(mul.cpu_count())
