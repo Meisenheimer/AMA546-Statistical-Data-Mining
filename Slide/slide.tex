@@ -1,0 +1,130 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{color, xcolor}
+
+% \usepackage[hidelinks]{hyperref}[citecolor=green]
+% \usepackage{cite}
+% \usepackage{appendix}
+
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{graphicx, subfig}
+\usepackage{float}
+\usepackage{enumerate}
+
+\usepackage{amsfonts}
+\usepackage{eucal}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{gensymb}
+\usepackage{amsthm}
+\usepackage{makecell}
+\usepackage[ruled]{algorithm2e}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+\usepackage[backend=bibtex,style=authoryear]{biblatex}
+\bibliography{reference.bib}
+\setbeamerfont{footnote}{size=\tiny}
+\renewcommand{\thefootnote}{[\arabic{footnote}]}
+
+\title{Title}
+\author{
+  \parbox{0.3\textwidth}{
+      \centering Name
+  }
+  \parbox{0.3\textwidth}{
+      \centering Name
+  }
+  \parbox{0.3\textwidth}{
+      \centering Name
+  }
+  \parbox{0.3\textwidth}{
+      \centering Name
+  }
+  \parbox{0.3\textwidth}{
+      \centering Name
+  }
+  \parbox{0.3\textwidth}{
+      \centering Name
+  }
+}
+\date{\today}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=0.3\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\insertsection
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.4\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\inserttitle
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
+    \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\begin{document}
+
+\section*{Cover}
+\frame{\titlepage}
+
+\section*{Contents}
+\begin{frame}{Contents}
+  \tableofcontents
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}{Introduction}
+  What specific question are you aiming to answer?
+
+  What makes this question interesting to you?
+
+  The source of dataset (In case you use other dataset).
+\end{frame}
+
+\section{Methods}
+
+\begin{frame}{Methods}
+  Summarize and explore the data.
+
+  What analyses are most appropriate to answer the question of interest?
+
+  Describe the analyses used.
+\end{frame}
+
+\section{Result}
+
+\begin{frame}{Result}
+  Present relevant graphics.
+
+  Interpret results of the analysis.
+\end{frame}
+
+\section{Conclusion}
+
+\begin{frame}{Conclusion}
+  What are your conclusions?
+
+  The contribution of your team members.
+\end{frame}
+
+\section*{Reference}
+\begin{frame}[allowframebreaks]{Reference}
+  \printbibliography
+\end{frame}
+
+\appendix
+
+\end{document}

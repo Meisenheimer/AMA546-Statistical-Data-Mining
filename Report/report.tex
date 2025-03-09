@@ -1,0 +1,151 @@
+\documentclass[11pt]{article}
+\usepackage{inputenc}
+\usepackage{comment}
+\usepackage{fontspec}
+\usepackage{authblk}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{gensymb}
+\usepackage{float}
+\usepackage{enumerate}
+\usepackage{tocloft}
+\usepackage{abstract}
+\usepackage[hidelinks]{hyperref}
+\usepackage{appendix}
+\usepackage[dvipsnames, svgnames, x11names]{xcolor}
+\usepackage{dirtree}
+\usepackage{cite}
+\usepackage{geometry}
+\usepackage{makecell}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subfig}
+\usepackage[ruled]{algorithm2e}
+\usepackage{indentfirst}
+\usepackage{unicode-math}
+
+% \setlength{\headheight}{16pt}
+
+\usepackage{setspace}
+\doublespacing
+
+\setmainfont{Times New Roman}
+
+% \setmainfont[%
+% ItalicFont=NewCM10-Italic.otf,%
+% BoldFont=NewCM10-Bold.otf,%
+% BoldItalicFont=NewCM10-BoldItalic.otf,%
+% SmallCapsFeatures={Numbers=OldStyle}]{NewCM10-Regular.otf}
+
+% \setsansfont[%
+% ItalicFont=NewCMSans10-Oblique.otf,%
+% BoldFont=NewCMSans10-Bold.otf,%
+% BoldItalicFont=NewCMSans10-BoldOblique.otf,%
+% SmallCapsFeatures={Numbers=OldStyle}]{NewCMSans10-Regular.otf}
+
+% \setmonofont[ItalicFont=NewCMMono10-Italic.otf,%
+% BoldFont=NewCMMono10-Bold.otf,%
+% BoldItalicFont=NewCMMono10-BoldOblique.otf,%
+% SmallCapsFeatures={Numbers=OldStyle}]{NewCMMono10-Regular.otf}
+
+% \setmathfont{NewCMMath-Regular.otf}
+
+\pagestyle{fancy}
+
+\renewcommand\thesection{\arabic{section}}
+
+\newcommand*{\rmd}{\mathop{}\!\mathrm{d}}
+\newcommand*{\sgn}{\mathrm{sgn}}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+\title{\Huge Title}
+
+\author{
+    \parbox{0.3\textwidth}{
+        \centering Name (Student ID)
+    }
+    \parbox{0.3\textwidth}{
+        \centering Name (Student ID)
+    }
+    \parbox{0.3\textwidth}{
+        \centering Name (Student ID)
+    }
+    \parbox{0.3\textwidth}{
+        \centering Name (Student ID)
+    }
+    \parbox{0.3\textwidth}{
+        \centering Name (Student ID)
+    }
+    \parbox{0.3\textwidth}{
+        \centering Name (Student ID)
+    }
+}
+
+\date{\today}
+
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    abstract
+    \\\\
+    \textbf{Keywords:} keywords
+\end{abstract}
+
+\newpage
+
+\tableofcontents
+\thispagestyle{empty}
+\setcounter{page}{0}
+
+\newpage
+
+\section{Introduction}
+
+\begin{itemize}
+    \item What specific question are you aiming to answer?
+    \item What makes this question interesting to you?
+    \item The source of dataset (In case you use other dataset).
+\end{itemize}
+
+\section{Methods}
+
+\begin{itemize}
+    \item Summarize and explore the data.
+    \item What analyses are most appropriate to answer the question of interest?
+    \item Describe the analyses used.
+\end{itemize}
+
+\section{Result}
+
+\begin{itemize}
+    \item Present relevant graphics.
+    \item Interpret results of the analysis.
+\end{itemize}
+
+\section{Conclusion}
+
+\begin{itemize}
+    \item What are your conclusions?
+    \item The contribution of your team members.
+\end{itemize}
+
+\newpage
+
+\bibliographystyle{unsrt}
+\bibliography{reference.bib}
+\addcontentsline{toc}{section}{References}
+
+% \newpage
+
+% \appendix
+% \renewcommand\thesection{\Alph{section}}
+
+\end{document}
