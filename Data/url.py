@@ -1,3 +1,4 @@
+import os
 import requests
 import multiprocessing as mul
 
@@ -13,7 +14,7 @@ http_header = {
 
 
 def get(url: str):
-    save_path = url.split('/')[-1]
+    save_path = os.path.join("./Origin/", url.split('/')[-1])
     response = requests.get(url=url, headers=http_header, timeout=10)
     if (response.status_code == 200):
         fp = open(save_path, "wb")

@@ -1,9 +1,7 @@
 .vscode/
 
-Data/*.txt
-Data/*.tgz
-Data/*.pl
-Data/README
+Data/Data
+Data/Origin
 
 # Prerequisites
 *.d
