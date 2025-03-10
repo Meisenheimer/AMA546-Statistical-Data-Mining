@@ -6,6 +6,7 @@ from sklearn.linear_model import Lasso, Ridge
 
 from DataLoader import load_all_logvol, load_all_tok
 from TextAnalytics import get_vocabulary, calc_tf_idf
+from Reduction import fit_reduction_model
 
 
 def init(args):
@@ -21,23 +22,37 @@ def main(args: argparse.Namespace) -> None:
     keys = list(logvol.keys())
 
     # compute tf-idf
-    vocabulary = get_vocabulary(tok, keys)
+    vocabulary = get_vocabulary(tok, keys, args.del_stop_words)
     tf, idf, tf_idf = calc_tf_idf(vocabulary, tok, keys)
+    print("Size of vocabulary: %d." % len(vocabulary))
+    with open("../Result/Vocabulary.txt", "w") as fp:
+        for item in vocabulary:
+            print(item, file=fp)
 
     # prepare data
-    Y = np.zeros((len(keys), 2))
-    for i in range(len(keys)):
-        Y[i][0] = logvol[keys[i]][0]
-        Y[i][1] = logvol[keys[i]][1]
-    X = np.concatenate((Y[:, 0].reshape(-1, 1), tf_idf), axis=1)
-    # X = Y[:, 0].reshape(-1, 1)
+    index_train, index_test = train_test_split(list(range(len(keys))), test_size=args.test_size)
 
-    train_x, test_x, train_y, test_y = train_test_split(X, Y, test_size=args.test_size)
+    if (len(set(index_train + index_test)) != len(keys)):
+        raise
 
-    print(train_x.shape)
-    print(test_x.shape)
-    print(train_y.shape)
-    print(test_y.shape)
+    train_x = tf_idf[index_train, :]
+    test_x = tf_idf[index_test, :]
+    train_y = np.zeros((len(index_train), 2))
+    test_y = np.zeros((len(index_test), 2))
+    for i in range(len(index_train)):
+        train_y[i][0] = logvol[keys[index_train[i]]][0]
+        train_y[i][1] = logvol[keys[index_train[i]]][1]
+    for i in range(len(index_test)):
+        test_y[i][0] = logvol[keys[index_test[i]]][0]
+        test_y[i][1] = logvol[keys[index_test[i]]][1]
+
+    reduction_model = fit_reduction_model(train_x, train_y if args.use_train_y else None,
+                                          args.reduct_method, args.target_dim)
+    train_x = np.concatenate((train_y[:, 0].reshape(-1, 1), reduction_model.transform(train_x)), axis=1)
+    test_x = np.concatenate((test_y[:, 0].reshape(-1, 1), reduction_model.transform(test_x)), axis=1)
+
+    print("Size of train set: ", train_x.shape, train_y.shape)
+    print("Size of test set: ", test_x.shape, test_y.shape)
 
     # training & results
     if (args.model == "Lasso"):
@@ -84,10 +99,16 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
 
     parser.add_argument("--alpha", type=float, default=0.001)
-    parser.add_argument("--iter", type=int, default=2048)
+    parser.add_argument("--iter", type=int, default=8192)
 
     parser.add_argument("--warm_start", type=bool, default=False)
     parser.add_argument("--model", type=str, default="Lasso")
+
+    parser.add_argument("--del_stop_words", type=bool, default=False)
+
+    parser.add_argument("--reduct_method", type=str, default="None")
+    parser.add_argument("--target_dim", type=int, default=-1)
+    parser.add_argument("--use_train_y", type=bool, default=False)
 
     args = parser.parse_args()
 
