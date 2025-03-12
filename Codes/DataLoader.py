@@ -3,6 +3,7 @@ import argparse
 from tqdm import tqdm
 
 DATA_DIR = "../Data/Data/"
+PRE_DATA_DIR = "../Data/Preprocessed/"
 
 
 def load_logvol(year: int) -> dict:
@@ -50,7 +51,7 @@ def load_all_logvol(args: argparse.Namespace) -> dict:
     """
     cnt = 0
     logvol = {}
-    for year in tqdm(range(args.start_year, args.end_year + 1)):
+    for year in tqdm(range(args.start_year, args.end_year + 1), file=args.log):
         tmp = load_logvol(year)
         cnt += len(tmp)
         logvol.update(tmp)
@@ -65,12 +66,28 @@ def load_all_tok(args: argparse.Namespace) -> dict:
     """
     cnt = 0
     tok = {}
-    for year in tqdm(range(args.start_year, args.end_year + 1)):
+    for year in tqdm(range(args.start_year, args.end_year + 1), file=args.log):
         tmp = load_tok(year)
         cnt += len(tmp)
         tok.update(tmp)
     if (cnt != len(tok)):
         raise
+    return tok
+
+
+def load_all_tok_dict(args: argparse.Namespace) -> dict:
+    tok = {}
+    for year in tqdm(range(args.start_year, args.end_year + 1), file=args.log):
+        base_dir = os.path.join(PRE_DATA_DIR, "%d.tok" % year)
+        filelist = os.listdir(base_dir)
+        for filename in filelist:
+            key = os.path.splitext(filename)[0]
+            tok[key] = {}
+            with open(os.path.join(base_dir, filename), "r", encoding="UTF-8") as fp:
+                text = fp.readlines()
+            for line in text:
+                tmp = line.split(' ')
+                tok[key][tmp[0]] = int(tmp[1])
     return tok
 
 

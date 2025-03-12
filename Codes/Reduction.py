@@ -19,8 +19,6 @@ def dr_nmf(x: np.ndarray, y: Union[np.ndarray, None] = None, target_dim: int = 0
 
 def fit_reduction_model(x: np.ndarray, y: Union[np.ndarray, None] = None,
                         dim_reduct_method: str = "None", target_dim: int = 0) -> object:
-    if (dim_reduct_method != "None"):
-        print("Use %s for reduction with %d components." % (dim_reduct_method, target_dim))
     if (dim_reduct_method == "None"):
         return dr_trival()
     elif (dim_reduct_method.upper() == "PCA"):
