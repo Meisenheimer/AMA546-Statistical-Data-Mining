@@ -1,12 +1,7 @@
-ifeq ($(OS_TYPE),)
-    OS := $(shell uname)
-    ifeq ($(OS), Linux)
-		RM = rm
-    else ifeq ($(OS), Darwin)
-		RM = rm
-    else
-        RM = del
-    endif
+ifeq ($(OS), Windows_NT)
+	RM = del
+else
+	RM = rm
 endif
 
 report: report.tex reference.bib Makefile
