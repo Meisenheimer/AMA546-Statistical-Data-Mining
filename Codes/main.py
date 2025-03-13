@@ -6,8 +6,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import Lasso, Ridge
 
-from DataLoader import load_all_logvol, load_all_tok_dict
-from TextAnalytics import get_vocabulary_dict, calc_tf_idf_dict
+from DataLoader import load_all_logvol, load_all_tok, init_nltk
+from TextAnalytics import get_vocabulary, calc_tf_idf
 from Reduction import fit_reduction_model
 
 
@@ -21,17 +21,18 @@ def main(args: argparse.Namespace) -> None:
     # load data
     print("load data", file=args.log)
     logvol = load_all_logvol(args)
-    tok = load_all_tok_dict(args)
+    tok = load_all_tok(args)
     keys = sorted(list(logvol.keys()))
 
     # compute tf-idf
     print("compute tf-idf", file=args.log)
-    vocabulary = sorted(get_vocabulary_dict(tok, keys, args))
+    vocabulary = sorted(get_vocabulary(tok, keys, args))
     print("Size of vocabulary: %d." % len(vocabulary), file=args.log)
-    tf_idf = calc_tf_idf_dict(vocabulary, tok, keys, args)
-    with open(os.path.join(args.output_dir, "Vocabulary.txt"), "w") as fp:
-        for item in vocabulary:
-            print(item, file=fp)
+    tf_idf = calc_tf_idf(vocabulary, tok, keys, args)
+    if (args.out_to_file):
+        with open(os.path.join(args.output_dir, "Vocabulary.txt"), "w") as fp:
+            for item in vocabulary:
+                print(item, file=fp)
 
     # prepare data
     print("prepare data", file=args.log)
@@ -58,6 +59,9 @@ def main(args: argparse.Namespace) -> None:
         test_y[:, 0] = 0.0
 
     reduction_model = fit_reduction_model(train_x, train_y, args.reduct_method, args.target_dim)
+    if (args.reduct_method == "NMF"):
+        print(reduction_model.get_params(), file=args.log)
+        print(reduction_model.components_, file=args.log)
     train_x = np.concatenate((train_y[:, 0].reshape(-1, 1), reduction_model.transform(train_x)), axis=1)
     test_x = np.concatenate((test_y[:, 0].reshape(-1, 1), reduction_model.transform(test_x)), axis=1)
 
@@ -110,20 +114,28 @@ if __name__ == "__main__":
     parser.add_argument("--test_size", type=float, default=0.2)
     parser.add_argument("--iter", type=int, default=16384)
     parser.add_argument("--del_stop_words", type=bool, default=False)
+    parser.add_argument("--lemmatization", type=bool, default=False)
+    parser.add_argument("--out_to_file", type=bool, default=False)
 
     args = parser.parse_args()
     args.time = time.localtime()
 
-    args.output_dir = f"../Result/{args.model}_{args.alpha}_{args.reduct_method}_{args.target_dim}_{args.start_year}_{args.end_year}_{'_RES' if args.use_residual else ''}_{args.seed}_{args.time.tm_mon}-{args.time.tm_mday}-{args.time.tm_hour}-{args.time.tm_min}-{args.time.tm_sec}/"
+    if (args.out_to_file):
+        args.output_dir = f"../Result/{args.model}_{args.alpha}_{args.reduct_method}_{args.target_dim}_{args.start_year}_{args.end_year}_{'_RES' if args.use_residual else ''}_{args.seed}_{args.time.tm_mon}-{args.time.tm_mday}-{args.time.tm_hour}-{args.time.tm_min}-{args.time.tm_sec}/"
 
-    os.makedirs("../Result/", exist_ok=True)
-    os.makedirs(args.output_dir, exist_ok=True)
+        os.makedirs("../Result/", exist_ok=True)
+        os.makedirs(args.output_dir, exist_ok=True)
 
-    args.log = open(os.path.join(args.output_dir, "log"), "w", encoding="UTF-8")
+        args.log = open(os.path.join(args.output_dir, "log"), "w", encoding="UTF-8")
+    else:
+        args.log = None
 
     print(args, file=args.log)
+
+    init_nltk()
 
     init(args)
     main(args)
 
-    args.log.close()
+    if (args.out_to_file):
+        args.log.close()
