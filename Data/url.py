@@ -7,12 +7,12 @@ import shutil
 from tqdm import tqdm
 
 SOURCE_DIR = "./Origin/"
-TARGET_DIR = "./DATA/"
+TARGET_DIR = "./Data/"
 
 url_list = [
-    "https://www.cs.cmu.edu/~ark/10K/data/README",
-    "https://www.cs.cmu.edu/~ark/10K/data/extract_MDA.pl",
-    "https://www.cs.cmu.edu/~ark/10K/data/tokenize_new.pl"
+    # "https://www.cs.cmu.edu/~ark/10K/data/README",
+    # "https://www.cs.cmu.edu/~ark/10K/data/extract_MDA.pl",
+    # "https://www.cs.cmu.edu/~ark/10K/data/tokenize_new.pl"
 ]
 
 http_header = {
