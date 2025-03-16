@@ -3,139 +3,202 @@ import time
 import random
 import argparse
 import numpy as np
+from tqdm import tqdm
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import Lasso, Ridge
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.decomposition import NMF
 
-from DataLoader import load_all_logvol, load_all_tok, init_nltk
+from DataLoader import load_all_logvol, load_all_tok, load_logvol, load_tok
 from TextAnalytics import get_vocabulary, calc_tf_idf
-from Reduction import fit_reduction_model
 
 
 def init(args):
+    # print("Set seed = %d" % args.seed)
     np.random.seed(args.seed)
     random.seed(args.seed)
     return None
 
 
-def main(args: argparse.Namespace) -> None:
-    # load data
-    print("load data", file=args.log)
-    logvol = load_all_logvol(args)
-    tok = load_all_tok(args)
-    keys = sorted(list(logvol.keys()))
+def error(args, pred_y: np.ndarray, true_y: np.ndarray) -> tuple:
+    abs_error = np.abs(pred_y - true_y)
+    return (np.mean(abs_error), np.mean(abs_error ** 2))
 
-    # compute tf-idf
-    print("compute tf-idf", file=args.log)
-    vocabulary = sorted(get_vocabulary(tok, keys, args))
-    print("Size of vocabulary: %d." % len(vocabulary), file=args.log)
-    tf_idf = calc_tf_idf(vocabulary, tok, keys, args)
-    if (args.out_to_file):
-        with open(os.path.join(args.output_dir, "Vocabulary.txt"), "w") as fp:
-            for item in vocabulary:
-                print(item, file=fp)
 
-    # prepare data
-    print("prepare data", file=args.log)
-    index_train, index_test = train_test_split(list(range(len(keys))), test_size=args.test_size)
-
-    if (len(set(index_train + index_test)) != len(keys)):
-        raise
-
-    train_x = tf_idf[index_train, :]
-    test_x = tf_idf[index_test, :]
-    train_y = np.zeros((len(index_train), 2))
-    test_y = np.zeros((len(index_test), 2))
-    for i in range(len(index_train)):
-        train_y[i][0] = logvol[keys[index_train[i]]][0]
-        train_y[i][1] = logvol[keys[index_train[i]]][1]
-    for i in range(len(index_test)):
-        test_y[i][0] = logvol[keys[index_test[i]]][0]
-        test_y[i][1] = logvol[keys[index_test[i]]][1]
-
-    if (args.use_residual):
-        train_y[:, 1] = train_y[:, 1] - train_y[:, 0]
-        train_y[:, 0] = 0.0
-        test_y[:, 1] = test_y[:, 1] - test_y[:, 0]
-        test_y[:, 0] = 0.0
-
-    reduction_model = fit_reduction_model(train_x, train_y, args.reduct_method, args.target_dim)
-    if (args.reduct_method == "NMF"):
-        print(reduction_model.get_params(), file=args.log)
-        print(reduction_model.components_, file=args.log)
-    train_x = np.concatenate((train_y[:, 0].reshape(-1, 1), reduction_model.transform(train_x)), axis=1)
-    test_x = np.concatenate((test_y[:, 0].reshape(-1, 1), reduction_model.transform(test_x)), axis=1)
-
-    print("Size of train set: ", train_x.shape, train_y.shape, file=args.log)
-    print("Size of test set: ", test_x.shape, test_y.shape, file=args.log)
-
-    # training & results
-    print("training & results", file=args.log)
+def train_test(args: argparse.Namespace,
+               train_x: np.ndarray, train_y: np.ndarray,
+               test_x: np.ndarray, test_y: np.ndarray,
+               H: np.ndarray) -> tuple:
     if (args.model == "Lasso"):
         model = Lasso(alpha=args.alpha, max_iter=args.iter)
     elif (args.model == "Ridge"):
         model = Ridge(alpha=args.alpha, max_iter=args.iter)
+    elif (args.model == "DecisionTree"):
+        model = DecisionTreeRegressor(max_depth=None if args.max_depth == 0 else args.max_depth, min_samples_split=args.min_samples_split, min_samples_leaf=args.min_samples_leaf)
     else:
         raise
+
+    # print("Trainning.")
     model.fit(train_x, train_y[:, 1])
-    print(model.coef_, file=args.log)
-    print(model.intercept_, file=args.log)
+
+    if (args.model in ["Lasso", "Ridge"]):
+        coef = model.coef_[1:].reshape(args.target_dim)
+        print(model.coef_, file=args.log)
+        print(model.intercept_, file=args.log)
+    elif (args.model == "DecisionTree"):
+        coef = model.feature_importances_[1:].reshape(args.target_dim)
+        print(model.feature_importances_, file=args.log)
+    else:
+        pass
+    word_weight = coef @ H
 
     pred_y = model.predict(test_x)
 
-    abs_error = np.abs(pred_y - test_y[:, 1])
-    print(np.mean(abs_error), np.mean((abs_error) ** 2), np.max(abs_error), file=args.log)
+    return (error(args, pred_y, test_y[:, 1]), error(args, test_y[:, 0], test_y[:, 1]), word_weight)
 
-    rel_error = np.abs((pred_y - test_y[:, 1]) / test_y[:, 1])
-    print(np.mean(rel_error), np.max(rel_error), file=args.log)
 
-    # baseline
-    print("baseline", file=args.log)
-    abs_error = np.abs(test_y[:, 0] - test_y[:, 1])
-    print(np.mean(abs_error), np.mean((abs_error) ** 2), np.max(abs_error), file=args.log)
+def main(args: argparse.Namespace) -> None:
+    # load data
+    print("Load data.")
+    logvol = load_all_logvol(args)
+    tok = load_all_tok(args)
+    keys = sorted(list(logvol.keys()))
 
-    rel_error = np.abs((test_y[:, 0] - test_y[:, 1]) / test_y[:, 1])
-    print(np.mean(rel_error), np.max(rel_error), file=args.log)
+    vocabulary = sorted(get_vocabulary(tok, keys, args))
+    print("Size of vocabulary: %d." % len(vocabulary))
+    tf_idf = calc_tf_idf(vocabulary, tok, keys, args)
 
+    print("Compute NMF.")
+    if (args.reduct_method == "NMF"):
+        NMFModel = NMF(n_components=args.target_dim).fit(tf_idf)
+        for_norm = np.linalg.norm(tf_idf, "fro")
+        tf_idf = NMFModel.transform(tf_idf)
+        H = NMFModel.components_
+        e = (tf_idf @ H)
+        print("NMF Non-zero rate = %f%%; NMF Error = %f/%f." % (np.count_nonzero(H) / float(H.shape[0] * H.shape[1]), np.linalg.norm(e, "fro"), for_norm), file=args.log)
+
+    y = np.zeros((len(keys), 2))
+    for i in range(len(keys)):
+        y[i, 0] = logvol[keys[i]][0]
+        y[i, 1] = logvol[keys[i]][1]
+    if (args.use_residual):
+        y[:, 1] = y[:, 1] - y[:, 0]
+        y[:, 0] = 0.0
+    tf_idf = np.concatenate((y[:, 0].reshape(-1, 1), tf_idf), axis=1)\
+
+    mae = []
+    mae_naive = []
+    mse = []
+    mse_naive = []
+    word_weights = np.zeros(len(vocabulary))
+
+    for seed in tqdm(range(args.epoch)):
+        args.seed = seed
+        init(args)
+
+        # print("Split data.")
+        train_x, test_x, train_y, test_y = train_test_split(tf_idf, y, test_size=args.test_size)
+
+        res, res_naive, word_weight = train_test(args, train_x, train_y, test_x, test_y, H)
+
+        mae.append((res[0]))
+        mae_naive.append(res_naive[0])
+        mse.append((res[1]))
+        mse_naive.append(res_naive[1])
+        word_weights += word_weight
+
+    print("Mean MAE = %f/%f, Var MAE = %f/%f." % (np.mean(mae), np.mean(mae_naive), np.var(mae), np.var(mae_naive)), file=args.log)
+    print("Mean MSE = %f/%f, Var MSE = %f/%f." % (np.mean(mse), np.mean(mse_naive), np.var(mse), np.var(mse_naive)), file=args.log)
+    word_weights /= float(args.epoch)
+
+    with open(os.path.join(args.output_dir, "MAE.txt"), "w", encoding="UTF-8") as fp:
+        for i in range(len(mae)):
+            print(mae[i], mae_naive[i], file=fp)
+
+    with open(os.path.join(args.output_dir, "MSE.txt"), "w", encoding="UTF-8") as fp:
+        for i in range(len(mse)):
+            print(mse[i], mse_naive[i], file=fp)
+
+    print("Predict new data (year = %d)." % (args.end_year + 1))
+    new_logvol = load_logvol(args.end_year + 1)
+    new_tok = load_tok(args.end_year + 1, args)
+    new_keys = sorted(list(new_logvol.keys()))
+    new_tf_idf = calc_tf_idf(vocabulary, new_tok, new_keys, args)
+
+    if (args.reduct_method == "NMF"):
+        new_tf_idf = NMFModel.transform(new_tf_idf)
+
+    ny = np.zeros((len(new_keys), 2))
+    for i in range(len(new_keys)):
+        ny[i, 0] = new_logvol[new_keys[i]][0]
+        ny[i, 1] = new_logvol[new_keys[i]][1]
+    if (args.use_residual):
+        ny[:, 1] = ny[:, 1] - ny[:, 0]
+        ny[:, 0] = 0.0
+    nx = np.concatenate((ny[:, 0].reshape(-1, 1), new_tf_idf), axis=1)
+
+    new_res, new_res_naive, new_word_weight = train_test(args, tf_idf, y, nx, ny, H)
+
+    print("Predict: MAE = %f/%f." % (new_res[0], new_res_naive[0]), file=args.log)
+    print("Predict: MSE = %f/%f." % (new_res[1], new_res_naive[1]), file=args.log)
+
+    with open(os.path.join(args.output_dir, "Vocabulary.txt"), "w") as fp:
+        index = np.argsort(new_word_weight)[::-1]
+        for i in index:
+            print(vocabulary[i], new_word_weight[i], word_weights[i], file=fp)
     return None
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--model", type=str, default="Lasso")
-    parser.add_argument("--alpha", type=float, default=0.001)
+
+    parser.add_argument("--alpha", type=float, default=0.0001)  # For lasso and ridge.
+
+    parser.add_argument("--max_depth", type=int, default=0)  # For decision tree.
+    parser.add_argument("--min_samples_split", type=int, default=2)  # For decision tree.
+    parser.add_argument("--min_samples_leaf", type=int, default=1)  # For decision tree.
+
     parser.add_argument("--reduct_method", type=str, default="None")
-    parser.add_argument("--target_dim", type=int, default=-1)
+    parser.add_argument("--target_dim", type=int, default=10)  # For NMF.
+
     parser.add_argument("--start_year", type=int, default=1996)
     parser.add_argument("--end_year", type=int, default=2006)
     parser.add_argument("--use_residual", type=bool, default=False)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--epoch", type=int, default=400)
 
     parser.add_argument("--test_size", type=float, default=0.2)
     parser.add_argument("--iter", type=int, default=16384)
     parser.add_argument("--del_stop_words", type=bool, default=False)
     parser.add_argument("--lemmatization", type=bool, default=False)
-    parser.add_argument("--out_to_file", type=bool, default=False)
+    parser.add_argument("--stemming", type=bool, default=False)
+
+    parser.add_argument("--use_pre_data", type=bool, default=False)
 
     args = parser.parse_args()
     args.time = time.localtime()
 
-    if (args.out_to_file):
-        args.output_dir = f"../Result/{args.model}_{args.alpha}_{args.reduct_method}_{args.target_dim}_{args.start_year}_{args.end_year}_{'_RES' if args.use_residual else ''}_{args.seed}_{args.time.tm_mon}-{args.time.tm_mday}-{args.time.tm_hour}-{args.time.tm_min}-{args.time.tm_sec}/"
+    if (args.use_pre_data):
+        args.del_stop_words = False
+        args.lemmatization = False
+        args.stemming = False
 
-        os.makedirs("../Result/", exist_ok=True)
-        os.makedirs(args.output_dir, exist_ok=True)
+    args.output_dir = f"../Result/{args.model}_{args.alpha}_{args.reduct_method}_{args.target_dim}_{args.start_year}_{args.end_year}{'_RES' if args.use_residual else ''}_{args.time.tm_mon:02d}-{args.time.tm_mday:02d}-{args.time.tm_hour:02d}-{args.time.tm_min:02d}-{args.time.tm_sec:02d}/"
 
-        args.log = open(os.path.join(args.output_dir, "log"), "w", encoding="UTF-8")
-    else:
-        args.log = None
+    os.makedirs("../Result/", exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    args.log = open(os.path.join(args.output_dir, "log.txt"), "w", encoding="UTF-8")
 
     print(args, file=args.log)
-
-    init_nltk()
 
     init(args)
     main(args)
 
-    if (args.out_to_file):
-        args.log.close()
+    args.log.close()
+
+    print("Total time = %f(s)" % (time.time() - start_time))

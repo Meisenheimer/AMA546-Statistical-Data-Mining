@@ -9,7 +9,7 @@ def get_vocabulary(words_dict: dict, keys: list, args: argparse.Namespace) -> li
     """
     vocabulary = set()
     num = 0
-    for key in tqdm(keys, file=args.log):
+    for key in tqdm(keys):
         for item in words_dict[key].keys():
             if (item not in vocabulary):
                 vocabulary.add(item)
@@ -30,11 +30,13 @@ def calc_tf_idf(vocabulary: list, words_dict: dict, keys: list, args: argparse.N
     if (n_key != len(words_dict)):
         raise
     tf = np.zeros((n_key, n_vocabulary))
-    for i in tqdm(range(n_key), file=args.log):
+    for i in tqdm(range(n_key)):
         tmp = words_dict[keys[i]]
-        for item in tmp.keys():
+        key_set = set(tmp.keys()) & set(vocabulary)
+        for item in key_set:
             tf[i, vocabulary_map[item]] = tmp[item]
-    tf *= np.log2(float(tf.shape[0]) / np.count_nonzero(tf, axis=0))
+    tf /= tf.sum(axis=1).reshape(-1, 1)
+    tf *= np.log2(float(tf.shape[0]) / np.clip(np.count_nonzero(tf, axis=0), a_min=1, a_max=None))
     return tf
 
 

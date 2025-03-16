@@ -1,8 +1,9 @@
 import os
 import nltk
 from nltk import pos_tag, word_tokenize
-from nltk.corpus import wordnet
+from nltk.corpus import wordnet, stopwords
 from nltk.stem import WordNetLemmatizer
+from nltk.stem.snowball import SnowballStemmer
 import argparse
 from tqdm import tqdm
 import multiprocessing as mul
@@ -10,16 +11,10 @@ import multiprocessing as mul
 DATA_DIR = "../Data/Data/"
 PRE_DATA_DIR = "../Data/Preprocessed/"
 
+nltk.data.path.append("./nltk/")
+STOP_WORDS = set(stopwords.words('english'))
 WNL = WordNetLemmatizer()
-with open("../Data/stop_words_english.txt", "r", encoding="UTF-8") as fp:
-    data = fp.read()
-    STOP_WORDS = set(data.split('\n'))
-
-
-def init_nltk():
-    nltk.download("punkt_tab")
-    nltk.download("averaged_perceptron_tagger_eng")
-    nltk.download("wordnet")
+SBS = SnowballStemmer("english")
 
 
 def load_logvol(year: int) -> dict:
@@ -50,7 +45,7 @@ def load_all_logvol(args: argparse.Namespace) -> dict:
     """
     cnt = 0
     logvol = {}
-    for year in tqdm(range(args.start_year, args.end_year + 1), file=args.log):
+    for year in tqdm(range(args.start_year, args.end_year + 1)):
         tmp = load_logvol(year)
         cnt += len(tmp)
         logvol.update(tmp)
@@ -59,7 +54,7 @@ def load_all_logvol(args: argparse.Namespace) -> dict:
     return logvol
 
 
-def text2dict(text: str, lemmatization: bool, del_stop_words: bool):
+def text2dict(text: str, lemmatization: bool, del_stop_words: bool, stemming: bool):
     data = {}
     if (lemmatization):
         def get_wordnet_pos(tag):
@@ -81,6 +76,8 @@ def text2dict(text: str, lemmatization: bool, del_stop_words: bool):
                 continue
             if (("" == item) or ("\n" == item) or (" " == item)):
                 raise
+            if (stemming):
+                item = SBS.stem(item)
             if (item not in data):
                 data[item] = 0
             data[item] += 1
@@ -90,6 +87,8 @@ def text2dict(text: str, lemmatization: bool, del_stop_words: bool):
                 continue
             if (("" == item) or ("\n" == item) or (" " == item)):
                 raise
+            if (stemming):
+                item = SBS.stem(item)
             if (item not in data):
                 data[item] = 0
             data[item] += 1
@@ -100,25 +99,34 @@ def load_tok(year: int, args: argparse.Namespace) -> dict:
     """
     load all files under {year}.tok/, then output the data in a dict {key: list of words}
     """
-    base_dir = os.path.join(DATA_DIR, "%d.tok" % year)
+    if (args.use_pre_data):
+        base_dir = os.path.join(DATA_DIR, "%d.tok.pre" % year)
+    else:
+        base_dir = os.path.join(DATA_DIR, "%d.tok" % year)
     filelist = os.listdir(base_dir)
     tok = {}
-    pool = mul.Pool(mul.cpu_count())
-    for filename in filelist:
+    if (not args.use_pre_data):
+        pool = mul.Pool(mul.cpu_count())
+    for filename in tqdm(filelist):
         key = os.path.splitext(filename)[0]
         with open(os.path.join(base_dir, filename), "r", encoding="UTF-8") as fp:
             text = fp.read().strip()
-        tok[key] = pool.apply_async(text2dict, (text, args.lemmatization, args.del_stop_words))
-    pool.close()
-    for filename in tqdm(filelist, file=args.log):
-        key = os.path.splitext(filename)[0]
-        tok[key] = tok[key].get(None)
+        if (not args.use_pre_data):
+            tok[key] = pool.apply_async(text2dict, (text, args.lemmatization, args.del_stop_words, args.stemming))
+        else:
+            tok[key] = text2dict(text, args.lemmatization, args.del_stop_words, args.stemming)
+    if (not args.use_pre_data):
+        pool.close()
+        for filename in tqdm(filelist):
+            key = os.path.splitext(filename)[0]
+            tok[key] = tok[key].get(None)
     return tok
 
 
 def load_all_tok(args: argparse.Namespace) -> dict:
     cnt = 0
     tok = {}
+
     for year in range(args.start_year, args.end_year + 1):
         tmp = load_tok(year, args)
         cnt += len(tmp)
