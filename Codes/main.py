@@ -51,11 +51,12 @@ def train_test(args: argparse.Namespace,
         print(model.feature_importances_, file=args.log)
     else:
         pass
-    word_weight = coef @ H
+    word_weight_1 = coef @ H
+    word_weight_2 = np.linalg.pinv(H) @ coef
 
     pred_y = model.predict(test_x)
 
-    return (error(args, pred_y, test_y[:, 1]), error(args, test_y[:, 0], test_y[:, 1]), word_weight)
+    return (error(args, pred_y, test_y[:, 1]), error(args, test_y[:, 0], test_y[:, 1]), word_weight_1, word_weight_2)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -91,7 +92,8 @@ def main(args: argparse.Namespace) -> None:
     mae_naive = []
     mse = []
     mse_naive = []
-    word_weights = np.zeros(len(vocabulary))
+    word_weights_1 = np.zeros(len(vocabulary))
+    word_weights_2 = np.zeros(len(vocabulary))
 
     for seed in tqdm(range(args.epoch)):
         args.seed = seed
@@ -100,17 +102,19 @@ def main(args: argparse.Namespace) -> None:
         # print("Split data.")
         train_x, test_x, train_y, test_y = train_test_split(tf_idf, y, test_size=args.test_size)
 
-        res, res_naive, word_weight = train_test(args, train_x, train_y, test_x, test_y, H)
+        res, res_naive, word_weight_1, word_weight_2 = train_test(args, train_x, train_y, test_x, test_y, H)
 
         mae.append((res[0]))
         mae_naive.append(res_naive[0])
         mse.append((res[1]))
         mse_naive.append(res_naive[1])
-        word_weights += word_weight
+        word_weights_1 += word_weight_1
+        word_weights_2 += word_weight_2
 
     print("Mean MAE = %f/%f, Var MAE = %f/%f." % (np.mean(mae), np.mean(mae_naive), np.var(mae), np.var(mae_naive)), file=args.log)
     print("Mean MSE = %f/%f, Var MSE = %f/%f." % (np.mean(mse), np.mean(mse_naive), np.var(mse), np.var(mse_naive)), file=args.log)
-    word_weights /= float(args.epoch)
+    word_weights_1 /= float(args.epoch)
+    word_weights_2 /= float(args.epoch)
 
     with open(os.path.join(args.output_dir, "MAE.txt"), "w", encoding="UTF-8") as fp:
         for i in range(len(mae)):
@@ -138,15 +142,14 @@ def main(args: argparse.Namespace) -> None:
         ny[:, 0] = 0.0
     nx = np.concatenate((ny[:, 0].reshape(-1, 1), new_tf_idf), axis=1)
 
-    new_res, new_res_naive, new_word_weight = train_test(args, tf_idf, y, nx, ny, H)
+    new_res, new_res_naive, new_word_weight_1, new_word_weight_2 = train_test(args, tf_idf, y, nx, ny, H)
 
     print("Predict: MAE = %f/%f." % (new_res[0], new_res_naive[0]), file=args.log)
     print("Predict: MSE = %f/%f." % (new_res[1], new_res_naive[1]), file=args.log)
 
     with open(os.path.join(args.output_dir, "Vocabulary.txt"), "w") as fp:
-        index = np.argsort(new_word_weight)[::-1]
-        for i in index:
-            print(vocabulary[i], new_word_weight[i], word_weights[i], file=fp)
+        for i in range(len(vocabulary)):
+            print(vocabulary[i], new_word_weight_1[i], new_word_weight_2[i], word_weights_1[i], word_weights_2[i], file=fp)
     return None
 
 
@@ -156,9 +159,9 @@ if __name__ == "__main__":
 
     parser.add_argument("--model", type=str, default="Lasso")
 
-    parser.add_argument("--alpha", type=float, default=0.0001)  # For lasso and ridge.
+    parser.add_argument("--alpha", type=float, default=0.001)  # For lasso and ridge.
 
-    parser.add_argument("--max_depth", type=int, default=0)  # For decision tree.
+    parser.add_argument("--max_depth", type=int, default=5)  # For decision tree.
     parser.add_argument("--min_samples_split", type=int, default=2)  # For decision tree.
     parser.add_argument("--min_samples_leaf", type=int, default=1)  # For decision tree.
 

@@ -30,8 +30,7 @@
 \setbeamerfont{footnote}{size=\tiny}
 \renewcommand{\thefootnote}{[\arabic{footnote}]}
 
-\title{Explore the Influence of Words on Stock Volatility and the Most Important Word Features \\ --- Based On 10-K report
-}
+\title{Stock Volatility Forecasting and Word Features Selection --- Based On 10-K Corpus}
 \author{
   \parbox{0.3\textwidth}{
     \centering WANG Zeyu
@@ -135,7 +134,7 @@
 
 \begin{frame}{Methods - Lemmatization, Stemming and Stop token filter}
 
-  We use the Natural Language Toolkit (NLTK) \footfullcite{nltk-py} for lemmatizer, stemmer and stop token filter. \vspace{.25cm}
+  We use the Natural Language Toolkit (NLTK) \footfullcite{nltk-py} as lemmatizer, stemmer and stop token filter. \vspace{.25cm}
 
   \begin{itemize}
     \item Some words are regarded as insignificant in text analysis;
@@ -144,7 +143,7 @@
           \end{itemize}
     \item Words appear in several inflected forms but with same meaning should be considered as the same;
           \begin{itemize}
-            \item[-] (e.g. {achieves, achieved, achievement, achievement} $\rightarrow$ achiev) \vspace{.25cm}
+            \item[-] (e.g. {achieves, achieved, achievement, achievements} $\rightarrow$ achiev) \vspace{.25cm}
           \end{itemize}
   \end{itemize}
 
@@ -161,16 +160,16 @@
     \end{aligned}
   $$ \vspace{.25cm}
 
-  where $f_{t, d}$ is the raw count of a term $t$ in a document $d$.
+  where $f_{t, d}$ is the raw count of a term $t$ in a document $d$, and $N$ is the total number of documents.
 
 \end{frame}
 
 \begin{frame}{Methods - Nonnegative Matrix Factorization (NMF)}
 
-  Given a matrix $A \in \mathbf{n \times m}$, the nonnegative matrix factorization (NMF) \footfullcite{lee2000algorithms} aims to find two nonnegative matrixs $W \in \mathbf{n \times d}, H \in \mathbf{d \times m}$, where $d$ is the given number of dimension, such that \vspace{.25cm}
+  Given a matrix $A \in \mathbb{R}^{n \times m}$, the nonnegative matrix factorization (NMF) \footfullcite{lee2000algorithms} aims to find two nonnegative matrixs $W \in \mathbb{R}^{n \times d}, H \in \mathbb{R}^{d \times m}$, where $d$ is the given number of dimension, such that \vspace{.25cm}
 
   $$
-    V \approx W H.
+    A \approx W H.
   $$ \vspace{.25cm}
 
   The previous research \footfullcite{lee1999learning} have shown that this method is able to learn the semantic features of text.
@@ -182,7 +181,7 @@
   \begin{itemize}
     \item The naive model (or Persistence model) uses the current (or same period) value as the forecast; \vspace{.25cm}
     \item The previous research \footfullcite{beck2025mind} has shown that the naive model is better than many other complex models, especially for high-volatility time series; \vspace{.25cm}
-    \item It can't show how the features affect the forecast.
+    \item It doesn’t involve the word features or any assumptions.
   \end{itemize}
 
 \end{frame}
@@ -211,15 +210,15 @@
 
 \begin{frame}{Methods - Model Evaluation}
 
-  Given the model parameter $\beta \in \mathbf{R}^d$ and NMF components $H \in \mathbf{R}^{d \times m} = (h_1, \dots, h_m)$, we compute \vspace{.25cm}
+  Given the model parameter $\beta \in \mathbb{R}^d$ and NMF components $H \in \mathbb{R}^{d \times m}$, we compute \vspace{.25cm}
 
   $$
-    \beta^T h_i
+    H^+ \beta = (V^T \Lambda^+ U) \beta
   $$ \vspace{.25cm}
 
-  for the $i$-th word as the overall weight, and choose the words with maximal/minimal weight for the features of increasing/decreasing.
+  as the weight for each words via the pseudo inverse, where $H = U^T \Lambda V$ is the SVD and $\Lambda^+$ is the diagonal matrix consisting of the reciprocals of $H$’s singular values.
 
-  We selected the top 100 words and check whether they are similar between different methods and years.
+  We selected the top $1000$ words (about $1\% \sim 5\%$ of total) and check whether they are similar between different methods and years.
 
 \end{frame}
 
@@ -255,8 +254,6 @@
       \draw[->] (M) -- (E);
       \draw[->] (M) -- (W);
     \end{tikzpicture}
-    \label{flowchart}
-    \caption{Flowchart for our methods.}
   \end{figure}
 
   We test the model in two approaches:
@@ -274,8 +271,8 @@
 
   \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{../Result/Res-1_MAE_test.jpg} \\
-    \includegraphics[width=0.7\textwidth]{../Result/Res-1_MSE_test.jpg}
+    \includegraphics[width=0.8\textwidth]{../Result/Res-1_MAE_test.jpg} \\
+    \includegraphics[width=0.8\textwidth]{../Result/Res-1_MSE_test.jpg}
     \caption{MAE and MSE for testing 1-year training set.}
   \end{figure}
 
@@ -285,8 +282,8 @@
 
   \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{../Result/Res-1_MAE_pred.jpg} \\
-    \includegraphics[width=0.7\textwidth]{../Result/Res-1_MSE_pred.jpg}
+    \includegraphics[width=0.8\textwidth]{../Result/Res-1_MAE_pred.jpg} \\
+    \includegraphics[width=0.8\textwidth]{../Result/Res-1_MSE_pred.jpg}
     \caption{MAE and MSE for predicting 1-year training set.}
   \end{figure}
 
@@ -296,8 +293,8 @@
 
   \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{../Result/Res-3_MAE_test.jpg} \\
-    \includegraphics[width=0.7\textwidth]{../Result/Res-3_MSE_test.jpg}
+    \includegraphics[width=0.8\textwidth]{../Result/Res-3_MAE_test.jpg} \\
+    \includegraphics[width=0.8\textwidth]{../Result/Res-3_MSE_test.jpg}
     \caption{MAE and MSE for testing 3-year training set.}
   \end{figure}
 
@@ -307,8 +304,8 @@
 
   \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\textwidth]{../Result/Res-3_MAE_pred.jpg} \\
-    \includegraphics[width=0.7\textwidth]{../Result/Res-3_MSE_pred.jpg}
+    \includegraphics[width=0.8\textwidth]{../Result/Res-3_MAE_pred.jpg} \\
+    \includegraphics[width=0.8\textwidth]{../Result/Res-3_MSE_pred.jpg}
     \caption{MAE and MSE for predicting 3-year training set.}
   \end{figure}
 
@@ -320,25 +317,25 @@
     \centering
     \begin{tabular}{|c|c|c|c|}
       \hline
-      Year      & Increasing Common & Decreasing Common & Different \\
+      Year      & Increasing Common          & Decreasing Common          & Different \\
       \hline
-      1996-1997 & $21.0\%$          & $70.0\%$          & $0.0\%$   \\
+      1996-1997 & $53.9\%$                   & $60.6\%$                   & $1.9\%$   \\
       \hline
-      1997-1998 & $27.0\%$          & $13.0\%$          & $0.5\%$   \\
+      1997-1998 & $35.1\%$                   & $39.2\%$                   & $6.4\%$   \\
       \hline
-      1998-1999 & $1.0\%$           & $43.0\%$          & $1.5\%$   \\
+      1998-1999 & \textcolor{blue}{$23.6\%$} & $31.7\%$                   & $5.6\%$   \\
       \hline
-      1999-2000 & $3.0\%$           & $5.0\%$           & $0.5\%$   \\
+      1999-2000 & \textcolor{red}{$3.8\%$}   & \textcolor{blue}{$27.8\%$} & $17.1\%$  \\
       \hline
-      2000-2001 & $3.0\%$           & $2.0\%$           & $0.5\%$   \\
+      2000-2001 & \textcolor{red}{$5.1\%$}   & \textcolor{blue}{$24.9\%$} & $1.2\%$   \\
       \hline
-      2001-2002 & $1.0\%$           & $25.0\%$          & $1.0\%$   \\
+      2001-2002 & $38.0\%$                   & $30.4\%$                   & $2.7\%$   \\
       \hline
-      2002-2003 & $52.0\%$          & $33.0\%$          & $0.0\%$   \\
+      2002-2003 & $31.7\%$                   & $31.0\%$                   & $12.15\%$ \\
       \hline
-      2003-2004 & $0.0\%$           & $4.0\%$           & $2.5\%$   \\
+      2003-2004 & \textcolor{blue}{$26.2\%$} & \textcolor{blue}{$58.3\%$} & $3.15\%$  \\
       \hline
-      2004-2005 & $29.0\%$          & $50.0\%$          & $0.5\%$   \\
+      2004-2005 & $42.2\%$                   & $38.3\%$                   & $6.4\%$   \\
       \hline
     \end{tabular}
     \caption{Word features for lasso regression between different years.}
@@ -352,25 +349,25 @@
     \centering
     \begin{tabular}{|c|c|c|c|}
       \hline
-      Year      & Increasing Common & Decreasing Common & Different \\
+      Year      & Increasing Common          & Decreasing Common          & Different \\
       \hline
-      1996-1997 & $11.0\%$          & $54.0\%$          & $2.5\%$   \\
+      1996-1997 & $48.3\%$                   & $55.1\%$                   & $2.9\%$   \\
       \hline
-      1997-1998 & $29.0\%$          & $45.0\%$          & $0.5\%$   \\
+      1997-1998 & $38.1\%$                   & $36.9\%$                   & $7.55\%$  \\
       \hline
-      1998-1999 & $0.0\%$           & $27.0\%$          & $11.5\%$  \\
+      1998-1999 & \textcolor{blue}{$20.2\%$} & $32.1\%$                   & $8.35\%$  \\
       \hline
-      1999-2000 & $0.0\%$           & $67.0\%$          & $0.5\%$   \\
+      1999-2000 & \textcolor{red}{$9.9\%$}   & $38.6\%$                   & $6.55\%$  \\
       \hline
-      2000-2001 & $2.0\%$           & $20.0\%$          & $0.5\%$   \\
+      2000-2001 & \textcolor{red}{$13.2\%$}  & \textcolor{blue}{$18.9\%$} & $3.25\%$  \\
       \hline
-      2001-2002 & $29.0\%$          & $25.0\%$          & $1.0\%$   \\
+      2001-2002 & $42.2\%$                   & $35.7\%$                   & $4.15\%$  \\
       \hline
-      2002-2003 & $24.0\%$          & $34.0\%$          & $12.5\%$  \\
+      2002-2003 & $35.8\%$                   & $36.4\%$                   & $9.2\%$   \\
       \hline
-      2003-2004 & $2.0\%$           & $62.0\%$          & $0.5\%$   \\
+      2003-2004 & \textcolor{blue}{$27.3\%$} & \textcolor{blue}{$44.6\%$} & $1.25\%$  \\
       \hline
-      2004-2005 & $34.0\%$          & $25.0\%$          & $2.5\%$   \\
+      2004-2005 & $45.5\%$                   & $43.6\%$                   & $9.3\%$   \\
       \hline
     \end{tabular}
     \caption{Word features for ridge regression between different years.}
@@ -384,25 +381,25 @@
     \centering
     \begin{tabular}{|c|c|c|c|}
       \hline
-      Year      & Increasing Common & Decreasing Common & Different \\
+      Year      & Increasing Common          & Decreasing Common        & Different \\
       \hline
-      1996-1997 & $67.0\%$          & $9.0\%$           & $0.0\%$   \\
+      1996-1997 & $62.7\%$                   & $15.8\%$                 & $3.6\%$   \\
       \hline
-      1997-1998 & $74.0\%$          & $11.0\%$          & $0.0\%$   \\
+      1997-1998 & $46.2\%$                   & $29.4\%$                 & $6.75\%$  \\
       \hline
-      1998-1999 & $64.0\%$          & $24.0\%$          & $0.0\%$   \\
+      1998-1999 & $37.1\%$                   & $18.8\%$                 & $8.4\%$   \\
       \hline
-      1999-2000 & $67.0\%$          & $10.0\%$          & $0.0\%$   \\
+      1999-2000 & $29.3\%$                   & $33.2\%$                 & $4.4\%$   \\
       \hline
-      2000-2001 & $71.0\%$          & $32.0\%$          & $0.0\%$   \\
+      2000-2001 & $23.9\%$                   & $32.7\%$                 & $6.2\%$   \\
       \hline
-      2001-2002 & $62.0\%$          & $8.0\%$           & $0.0\%$   \\
+      2001-2002 & $23.7\%$                   & \textcolor{red}{$3.6\%$} & $10.9\%$  \\
       \hline
-      2002-2003 & $56.0\%$          & $8.0\%$           & $0.0\%$   \\
+      2002-2003 & $45.7\%$                   & \textcolor{red}{$5.8\%$} & $4.3\%$   \\
       \hline
-      2003-2004 & $72.0\%$          & $15.0\%$          & $0.0\%$   \\
+      2003-2004 & \textcolor{blue}{$34.7\%$} & \textcolor{red}{$2.0\%$} & $11.85\%$ \\
       \hline
-      2004-2005 & $77.0\%$          & $35.0\%$          & $0.0\%$   \\
+      2004-2005 & $56.7\%$                   & \textcolor{red}{$7.3\%$} & $2.1\%$   \\
       \hline
     \end{tabular}
     \caption{Word features for decision tree between different years.}
@@ -413,33 +410,34 @@
 \begin{frame}{Result - Word Features}
 
   \begin{table}[H]
+    \footnotesize
     \centering
     \begin{tabular}{|c|c|c|c|}
       \hline
-      Year & Lasso Ridge               & Lasso DT                  & Ridge DT                  \\
+      Year & Lasso Ridge                & Lasso DT                                     & Ridge DT                                      \\
       \hline
-      1996 & $68.0\%$/$91.0\%$/$0.0\%$ & $8.0\%$/$0.0\%$/$19.0\%$  & $6.0\%$/$0.0\%$/$23.5\%$  \\
+      1996 & $75.2\%$/$71.6\%$/$0.15\%$ & $23.2\%$/$7.7\%$/$27.0\%$                    & $36.1\%$/$25.1\%$/$17.35\%$                   \\
       \hline
-      1997 & $62.0\%$/$76.0\%$/$0.5\%$ & $27.0\%$/$0.0\%$/$18.5\%$ & $39.0\%$/$0.0\%$/$15.5\%$ \\
+      1997 & $82.0\%$/$87.2\%$/$0.15\%$ & $15.4\%$/$7.3\%$/$25.85\%$                   & $16.6\%$/$12.2\%$/$25.6\%$                    \\
       \hline
-      1998 & $91.0\%$/$62.0\%$/$0.0\%$ & $33.0\%$/$0.0\%$/$8.0\%$  & $36.0\%$/$0.0\%$/$13.5\%$ \\
+      1998 & $84.4\%$/$85.5\%$/$0.2\%$  & $14.1\%$/$15.1\%$/$15.4\%$                   & $12.2\%$/$15.6\%$/$18.6\%$                    \\
       \hline
-      1999 & $19.0\%$/$23.0\%$/$2.5\%$ & $6.0\%$/$0.0\%$/$13.5\%$  & $7.0\%$/$0.0\%$/$34.0\%$  \\
+      1999 & $67.9\%$/$83.9\%$/$0.35\%$ & $17.8\%$/$23.8\%$/$19.8\%$                   & $11.5\%$/$23.1\%$/$24.0\%$                    \\
       \hline
-      2000 & $35.0\%$/$18.0\%$/$2.5\%$ & $18.0\%$/$0.0\%$/$5.5\%$  & $11.0\%$/$0.0\%$/$33.5\%$ \\
+      2000 & $68.1\%$/$55.3\%$/$1.85\%$ & $19.0\%$/$25.1\%$/$17.6\%$                   & $24.1\%$/$9.5\%$/$26.1\%$                     \\
       \hline
-      2001 & $22.0\%$/$74.0\%$/$1.5\%$ & $7.0\%$/$0.0\%$/$19.0\%$  & $34.0\%$/$0.0\%$/$17.0\%$ \\
+      2001 & $91.7\%$/$92.9\%$/$0.1\%$  & $5.5\%$/$0.9\%$/$31.55\%$                    & $6.8\%$/$1.6\%$/$30.55\%$                     \\
       \hline
-      2002 & $95.0\%$/$90.0\%$/$0.0\%$ & $24.0\%$/$0.0\%$/$16.0\%$ & $26.0\%$/$0.0\%$/$19.0\%$ \\
+      2002 & $88.6\%$/$79.1\%$/$0.1\%$  & \textcolor{blue}{$37.7\%$/$49.8\%$/$9.75\%$} & \textcolor{blue}{$33.8\%$/$39.2\%$/$14.35\%$} \\
       \hline
-      2003 & $59.0\%$/$24.0\%$/$2.5\%$ & $22.0\%$/$0.0\%$/$6.5\%$  & $16.0\%$/$0.0\%$/$34.0\%$ \\
+      2003 & $93.6\%$/$89.5\%$/$0.15\%$ & $13.4\%$/$10.4\%$/$27.05\%$                  & $15.2\%$/$13.9\%$/$25.45\%$                   \\
       \hline
-      2004 & $56.0\%$/$49.0\%$/$0.5\%$ & $8.0\%$/$0.0\%$/$21.0\%$  & $13.0\%$/$0.0\%$/$27.0\%$ \\
+      2004 & $75.2\%$/$73.4\%$/$0.2\%$  & $23.5\%$/$24.2\%$/$21.25\%$                  & $30.4\%$/$20.4\%$/$20.85\%$                   \\
       \hline
-      2005 & $76.0\%$/$73.0\%$/$0.0\%$ & $24.0\%$/$0.0\%$/$11.5\%$ & $23.0\%$/$0.0\%$/$22.0\%$ \\
+      2005 & $95.6\%$/$90.8\%$/$0.4\%$  & $9.9\%$/$2.5\%$/$27.5\%$                     & $10.2\%$/$5.2\%$/$28.7\%$                     \\
       \hline
     \end{tabular}
-    \caption{Word features between different models (Increasing Common, Decreasing Common, Different).}
+    \caption{Word features between different models.}
   \end{table}
 
 \end{frame}
@@ -448,11 +446,11 @@
 
 \begin{frame}{Conclusion}
 
-  For forecasting, similar to the previous research \footfullcite{kogan2009predicting}:
+  Some conclusions are similar to the previous research \footfullcite{kogan2009predicting}:
 
   \begin{itemize}
     \item More training data can lead to higher accuracy and stablity; \vspace{.25cm}
-    \item The Sarbanes–Oxley Act (2002) changes the information/distribution of the words in text; \vspace{.25cm}
+    \item The Sarbanes–Oxley Act (2002) changes the information and distribution of the words; \vspace{.25cm}
     \item The Sarbanes–Oxley Act (2002) makes a higher accuracy in prediction.
   \end{itemize}
 
@@ -464,8 +462,8 @@
 
   \begin{itemize}
     \item There exists the similarity between different years; \vspace{.25cm}
-    \item The lasso/ridge regression can give the same features; \vspace{.25cm}
-    \item The decision tree always choose the same feature, but it seems not good; \vspace{.25cm}
+    \item The lasso and ridge regression always give the same features, while the decision tree chooses the different (because the decision tree is more likely to split the data based on the previous volatility); \vspace{.25cm}
+    \item The abnormal during 1999 to 2001 may caused by the dot-com bubble; \vspace{.25cm}
     \item Compare with the features of increasing, the of features decreasing are more similar between years.
   \end{itemize}
 
