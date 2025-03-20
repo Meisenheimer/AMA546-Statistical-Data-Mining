@@ -3,7 +3,7 @@
 Data/Data
 Data/Origin
 Data/Preprocessed
-Result/*
+Result*
 
 # Prerequisites
 *.d
