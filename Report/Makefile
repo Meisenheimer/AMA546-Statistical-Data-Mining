@@ -16,4 +16,3 @@ clean:
 	$(RM) report.blg
 	$(RM) report.log
 	$(RM) report.out
-	$(RM) report.toc

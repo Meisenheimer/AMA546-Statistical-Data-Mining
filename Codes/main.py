@@ -85,9 +85,6 @@ def main(args: argparse.Namespace) -> None:
     for i in range(len(keys)):
         y[i, 0] = logvol[keys[i]][0]
         y[i, 1] = logvol[keys[i]][1]
-    if (args.use_residual):
-        y[:, 1] = y[:, 1] - y[:, 0]
-        y[:, 0] = 0.0
     tf_idf = np.concatenate((y[:, 0].reshape(-1, 1), tf_idf), axis=1)\
 
     mae = []
@@ -134,9 +131,6 @@ def main(args: argparse.Namespace) -> None:
     for i in range(len(new_keys)):
         ny[i, 0] = new_logvol[new_keys[i]][0]
         ny[i, 1] = new_logvol[new_keys[i]][1]
-    if (args.use_residual):
-        ny[:, 1] = ny[:, 1] - ny[:, 0]
-        ny[:, 0] = 0.0
     nx = np.concatenate((ny[:, 0].reshape(-1, 1), new_tf_idf), axis=1)
 
     new_res, new_res_naive, new_word_weight = train_test(args, tf_idf, y, nx, ny, H)
@@ -166,10 +160,9 @@ if __name__ == "__main__":
 
     parser.add_argument("--start_year", type=int, default=1996)
     parser.add_argument("--end_year", type=int, default=2006)
-    parser.add_argument("--use_residual", type=bool, default=False)
+
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--epoch", type=int, default=400)
-
     parser.add_argument("--test_size", type=float, default=0.2)
     parser.add_argument("--iter", type=int, default=16384)
 
