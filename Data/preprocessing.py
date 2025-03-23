@@ -9,12 +9,11 @@ from tqdm import tqdm
 import multiprocessing as mul
 
 DATA_DIR = "../Data/Data/"
-PRE_DATA_DIR = "../Data/Preprocessed/"
 
 nltk.data.path.append("./nltk/")
 WNL = WordNetLemmatizer()
 SBS = SnowballStemmer("english")
-STOP_WORDS = set(stopwords.words('english'))
+STOP_WORDS = set(stopwords.words("english"))
 
 
 def L_S_S(filename: str):

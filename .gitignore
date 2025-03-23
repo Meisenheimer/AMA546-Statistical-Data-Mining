@@ -1,9 +1,6 @@
 .vscode/
 
 Data/Data
-Data/Origin
-Data/Preprocessed
-Result*
 
 # Prerequisites
 *.d

@@ -15,12 +15,18 @@ from TextAnalytics import get_vocabulary, calc_tf_idf
 
 
 def init(args):
+    """
+    Set the random seed.
+    """
     np.random.seed(args.seed)
     random.seed(args.seed)
     return None
 
 
 def error(pred_y: np.ndarray, true_y: np.ndarray) -> tuple:
+    """
+    Compute the MAE and MSE for given result with the ground truth.
+    """
     abs_error = np.abs(pred_y - true_y)
     return (np.mean(abs_error), np.mean(abs_error ** 2))
 
@@ -64,15 +70,19 @@ def main(args: argparse.Namespace) -> None:
     """
     The algorithm is shown in the slide and report.
     """
+
+    # load the data from text file.
     print("Loading data.")
     logvol = load_all_logvol(args.start_year, args.end_year)
     tok = load_all_tok(args.start_year, args.end_year)
     keys = sorted(list(logvol.keys()))
 
+    # calculate the vocabulary set and TF-IDF.
     vocabulary = sorted(get_vocabulary(tok, keys, args))
     print("Size of vocabulary: %d." % len(vocabulary))
     tf_idf = calc_tf_idf(vocabulary, tok, keys, args)
 
+    # Use NMF for dimensionality reduction.
     print("Computing NMF.")
     NMFModel = NMF(n_components=args.target_dim).fit(tf_idf)
     for_norm = np.linalg.norm(tf_idf, "fro")
@@ -81,6 +91,7 @@ def main(args: argparse.Namespace) -> None:
     e = (tf_idf @ H)
     print("NMF Non-zero rate = %f%%; NMF Error = %f/%f." % (np.count_nonzero(H) / float(H.shape[0] * H.shape[1]), np.linalg.norm(e, "fro"), for_norm), file=args.log)
 
+    # Prepare the training data.
     y = np.zeros((len(keys), 2))
     for i in range(len(keys)):
         y[i, 0] = logvol[keys[i]][0]
@@ -95,6 +106,7 @@ def main(args: argparse.Namespace) -> None:
 
     print("Training and testing.")
     for seed in tqdm(range(args.epoch)):
+        # Train and test the data with different splitting, and then take the average as the result.
         args.seed = seed
         init(args)
 
@@ -120,11 +132,12 @@ def main(args: argparse.Namespace) -> None:
         for i in range(len(mse)):
             print(mse[i], mse_naive[i], file=fp)
 
+    # Use the previous data to train the model, and test on the new year's data.
     print("Predict new data (year = %d)." % (args.end_year + 1))
     new_logvol = load_logvol(args.end_year + 1)
     new_tok = load_tok(args.end_year + 1)
     new_keys = sorted(list(new_logvol.keys()))
-    new_tf_idf = calc_tf_idf(vocabulary, new_tok, new_keys, args)
+    new_tf_idf = calc_tf_idf(vocabulary, new_tok, new_keys, args)  # use the vocabulary of the previous to compute the TF-IDF of the new data.
     new_tf_idf = NMFModel.transform(new_tf_idf)
 
     ny = np.zeros((len(new_keys), 2))
