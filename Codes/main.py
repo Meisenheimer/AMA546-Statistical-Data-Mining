@@ -172,7 +172,7 @@ if __name__ == "__main__":
     parser.add_argument("--target_dim", type=int, default=20)  # For NMF.
 
     parser.add_argument("--start_year", type=int, default=1996)
-    parser.add_argument("--end_year", type=int, default=2006)
+    parser.add_argument("--end_year", type=int, default=1996)
 
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--epoch", type=int, default=400)
